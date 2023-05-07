@@ -149,11 +149,13 @@ on join:
     set {spawn} to location of player
     set {command_error_message} to "&cYou don't have the permission to execute this command !"
     if {grade.%player%} isn't set:
+        set {grade.%player%} to 1
+    if {party.%player%} isn't set:
         set {party.%player%} to "nobody"
+    if {mute::0.%player%} isn't set:
         set {mute::0.%player%} to 0
         set {mute::1.%player%} to "none"
         set {mute::2.%player%} to "nobody"
-        set {grade.%player%} to 1
         broadcast "&eWelcome &6%player%&e !"          
     else:
         set join message to "&6%player%&e joined."
