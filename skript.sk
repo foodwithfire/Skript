@@ -21,10 +21,7 @@ every 0.01 seconds:
             set {grade_name.%loop-player%} to "&4&l[Owner] "
             set {chat_color.%loop-player%} to "&4"  
 
-
-
         set loop-player's food level to 10
-
 
 # commands
 
