@@ -10,16 +10,16 @@ every 0.01 seconds:
                 set slot 4 of loop-player to compass named "&6&lGamemodes" with lore "&6&lRight click&r&e to select a &6&lgamemode&r&e !"
         if {grade.%loop-player%} is 2:
             set {grade_name.%loop-player%} to "&e[Helper] "
-            set {chat_color.%loop-player%} to "&f"  
+            set {chat_color.%loop-player%} to "&e"  
         if {grade.%loop-player%} is 3:
             set {grade_name.%loop-player%} to "&6[Modo] "
             set {chat_color.%loop-player%} to "&e"  
         if {grade.%loop-player%} is 4:
             set {grade_name.%loop-player%} to "&4[Admin] "
-            set {chat_color.%loop-player%} to "&c"  
+            set {chat_color.%loop-player%} to "&f"  
         if {grade.%loop-player%} is 5:
-            set {grade_name.%loop-player%} to "&4&l[Owner] "
-            set {chat_color.%loop-player%} to "&4"  
+            set {grade_name.%loop-player%} to "&4[Owner] "
+            set {chat_color.%loop-player%} to "&f"  
 
         set loop-player's food level to 10
 
@@ -84,7 +84,7 @@ command /mute [<player>] [<text="No reason.">]:
             set {mute::1.%arg-1%} to arg-2
             set {mute::2.%arg-1%} to player
             send "&6%arg-1%&e is now muted for reason : %arg-2%!" to player
-            send "&c&lYou have been muted by %{mute::2.%arg-1%}% for reason : '%arg-2% !'" to arg-1
+            send "&cYou have been muted by %{mute::2.%arg-1%}% for reason : '%arg-2% !'" to arg-1
 
 command /unmute [<player>]:
     permission: op
@@ -97,7 +97,7 @@ command /unmute [<player>]:
             set {mute::1.%arg-1%} to "none"
             set {mute::2.%arg-1%} to player
             send "&6%arg-1%&e is no longer muted !" to player
-            send "&c&lYou have been unmuted by %{mute::2.%player%}%" to arg-1
+            send "&cYou have been unmuted by %{mute::2.%player%}%" to arg-1
 
 command /tell [<player>] [<text>]:
     aliases: /msg, /message, /m
@@ -125,22 +125,77 @@ command /reply [<text>]:
             send "&7[&eYou &f-> %{grade_name.%arg-1%}%%{last_message_received.%player%}%&r&7]&e[REPLY] &f%arg-1%" to player
             send "&7[%{grade_name.%player%}%%{last_message_received.%player%}% &r&f-> &eYou&7] &f%arg-1%" to {last_message_received.%player%}
 
-command /party [<player>]:
-    if arg-1 isn't set:
-        if {party.%player%} isn't "nobody":
-            send "&c&lError: You can't create a party since you are already in a party !"
-        else:
-            set {party.%player%} to %player%
-            send "&a&lParty successfully created !"
-    else:
-        if {party.%player%} is "nobody":
-            send "&c&lError: You can't invite people since you are not in a party !"
-        else:
-            if {party.%player%} is %player%:
-                send "&a&lYou successfully sent a party invite to %arg-1%, they now have to accept the invite to join your party !"
-                send "&7[&6&lPARTY&7]&7[&eINVITE&7] &f%player% invited you to their party, accept the invite to join it !"
+command /party [<text>] [<player>]:
+    aliases: /p
+    trigger:
+        if arg-1 isn't set:
+            send "&cSyntaxError: Invalid party argument, try /party help."
+        elif arg-1 is "create":
+            if {party.%player%} isn't "nobody":
+                send "&cError: You can't create a party since you are already in a party !"
             else:
-                send "&c&lError: You can't invite people since you are not the leader of the party !"
+                set {party.%player%} to player
+                send "&aParty successfully created !"
+        elif arg-1 is "disband":
+            if {party.%player%} is "nobody":
+                send "&cError: You can't disband the party since you are not in one !"
+            else:
+                if {party.%player%} is player:
+                    set {party.%player%} to "nobody"
+                    send "&aParty successfully disbanded !"
+                    loop all players:
+                        if loop-player isn't player and {party.%loop-player%} is player:
+                            send "&e---------------------------------"  to loop-player
+                            send "&e&6&l%player%&r&6 disbanded the party !"  to loop-player
+                            send "&e---------------------------------"  to loop-player 
+                            set {party.%loop-player%} to "nobody"
+                 else:
+                    send "&cError: You can't disband the party since you are not the leader of it !"
+        elif arg-1 is "invite":
+            if {party.%player%} is "nobody":
+                send "&cError: You can't invite people since you are not in a party !"
+            else:
+                if {party.%player%} is player:
+                    send "&aYou successfully sent a party invite to %arg-2%, they now have to accept the invite to join your party !" to player
+                    send "&7[&6&lPARTY&7]&7[&eINVITE&7] &f%player% invited you to their party, accept the invite to join it !" to arg-1
+                else:
+                    send "&cError: You can't invite people since you are not the leader of the party !"
+        elif arg-1 is "accept":
+        elif arg-1 is "leave":
+            if {party.%player%} is "nobody":
+                send "&cError: You can't leave the party since you are not in one !"
+            else:
+                if {party.%player%} is player:
+                    send "&e--------------&6Party&e---------------"  to player
+                    send "&6Since you are the leader, the party is going to be disbanded." to player
+                    send "&e---------------------------------"  to player
+                    loop all players:
+                        if loop-player isn't player and {party.%loop-player%} is player:
+                            send "&e---------------------------------"  to loop-player
+                            send "&e&6&l%player%&r&6 disbanded the party !"  to loop-player
+                            send "&e---------------------------------"  to loop-player              
+                            set {party.%loop-player%} to "nobody"
+                    set {party.%player%} to "nobody"
+                else:
+                    loop all players:
+                    if loop-player isn't player and {party.%loop-player%} is {party.%player%}:
+                        send "&7[&6PARTY&7] &l&6%player%&r&e left the party !" to loop-player
+                    set {party.%player%} to "nobody"
+        elif arg-1 is "help":
+            send "&e---------------------------------"  to player
+            send "&e----- &6Party commands list&e:" to player
+            send "&e- &6/party create" to player
+            send "&e- &6/party disband" to player
+            send "&e- &6/party invite" to player
+            send "&e- &6/party accept" to player
+            send "&e- &6/party leave" to player
+            send "&e- &6/party help" to player
+            send "&e---------------------------------"
+        else:
+            send "&cSyntaxError: Invalid party argument, try /party help."
+
+command /me:
+    trigger:
 
 # events
 
