@@ -5,19 +5,20 @@ every 0.01 seconds:
         if {grade.%loop-player%} is 1:
             set {grade_name.%loop-player%} to "&7[Player] "
             set {chat_color.%loop-player%} to "&7" 
-            if slot 4 of loop-player is empty:
-                clear loop-player's inventory
-                set slot 4 of loop-player to compass named "&6&lGamemodes" with lore "&6&lRight click&r&e to select a &6&lgamemode&r&e !"
-        if {grade.%loop-player%} is 2:
+            set gamemode of loop-player to adventure
+        else if {grade.%loop-player%} is 2:
             set {grade_name.%loop-player%} to "&e[Helper] "
             set {chat_color.%loop-player%} to "&e"  
-        if {grade.%loop-player%} is 3:
+        else if {grade.%loop-player%} is 3:
+            set {grade_name.%loop-player%} to "&6[Builder] "
+            set {chat_color.%loop-player%} to "&e"  
+        else if {grade.%loop-player%} is 4:
             set {grade_name.%loop-player%} to "&6[Modo] "
             set {chat_color.%loop-player%} to "&e"  
-        if {grade.%loop-player%} is 4:
+        else if {grade.%loop-player%} is 5:
             set {grade_name.%loop-player%} to "&4[Admin] "
             set {chat_color.%loop-player%} to "&f"  
-        if {grade.%loop-player%} is 5:
+        else if {grade.%loop-player%} is 6:
             set {grade_name.%loop-player%} to "&4[Owner] "
             set {chat_color.%loop-player%} to "&f"  
 
@@ -25,6 +26,10 @@ every 0.01 seconds:
 
 # commands
 
+command /spawn:
+    trigger:
+        teleport player to location at 1029.5, 6, 998.5 in "world"
+        send "&7Teleported to spawn."
 command /reset [<player=%player%>]:
     permission: op
     permission message: {command_error_message}
@@ -33,7 +38,7 @@ command /reset [<player=%player%>]:
         set {mute::1.%arg-1%} to "none"
         set {mute::2.%arg-1%} to "nobody"
 
-command /rank [<player>] <number>:
+command /rank [<offline player>] <number>:
     permission: op
     permission message: {command_error_message}
     trigger:
@@ -51,19 +56,7 @@ command /staffchat [<text>]:
                 if loop-player has permission "staff.chat":
                     send "&8[&6&lStaffChat&8]&6&l %player%: &e%arg-1%" to loop-player
 
-command /spawn:
-    trigger:
-        teleport the player to {spawn}
-        send "&7Teleported to spawn."
-
-command /setspawn:
-    permission: op
-    permission message: {command_error_message}
-    trigger:
-        set {spawn} to location of player
-        send "&cThe spawn is now located at %location of player%"
-
-command /send [<player>] [<text>]:
+command /send [<offline player>] [<text>]:
     permission: op
     permission message: {command_error_message}
     trigger:
@@ -73,33 +66,35 @@ command /send [<player>] [<text>]:
             loop all players:
                 send "%{grade_name.%arg-1%}% %arg-1% : %{chat_color.%arg-1%}%%arg-2%" to loop-player
 
-command /mute [<player>] [<text="No reason.">]:
-    permission: op
-    permission message: {command_error_message}
+command /mute [<offline player>] [<text="No reason.">]:
     trigger:
-        if arg-1 is "nobody":
-            send "&cSyntax Error: /mute [target] [reason]" to player
+        if {grade.%player%} is greater than 2:
+            if arg-1 is "nobody":
+                send "&cSyntax Error: /mute [target] [reason]" to player
+            else:
+                set {mute::0.%arg-1%} to 1
+                set {mute::1.%arg-1%} to arg-2
+                set {mute::2.%arg-1%} to player
+                send "&6%arg-1%&e is now muted for reason : %arg-2%!" to player
+                send "&cYou have been muted by %{mute::2.%arg-1%}% for reason : '%arg-2% !'" to arg-1
         else:
-            set {mute::0.%arg-1%} to 1
-            set {mute::1.%arg-1%} to arg-2
-            set {mute::2.%arg-1%} to player
-            send "&6%arg-1%&e is now muted for reason : %arg-2%!" to player
-            send "&cYou have been muted by %{mute::2.%arg-1%}% for reason : '%arg-2% !'" to arg-1
+            send "%{command_error_message}%" to player
 
-command /unmute [<player>]:
-    permission: op
-    permission message: {command_error_message}
+command /unmute [<offline player>]:
     trigger:
-        if arg-1 is "nobody":
-            send "&cSyntax Error: /unmute [target]" to player
+        if {grade.%player%} is greater than 2:    
+            if arg-1 is "nobody":
+                send "&cSyntax Error: /unmute [target]" to player
+            else:
+                set {mute::0.%arg-1%} to 0
+                set {mute::1.%arg-1%} to "none"
+                set {mute::2.%arg-1%} to player
+                send "&6%arg-1%&e is no longer muted !" to player
+                send "&cYou have been unmuted by %{mute::2.%player%}%" to arg-1
         else:
-            set {mute::0.%arg-1%} to 0
-            set {mute::1.%arg-1%} to "none"
-            set {mute::2.%arg-1%} to player
-            send "&6%arg-1%&e is no longer muted !" to player
-            send "&cYou have been unmuted by %{mute::2.%player%}%" to arg-1
+            send "%{command_error_message}%" to player
 
-command /tell [<player>] [<text>]:
+command /tell [<offline player>] [<text>]:
     aliases: /msg, /message, /m
     trigger:
         if arg-1 isn't set:
@@ -122,10 +117,10 @@ command /reply [<text>]:
         else if {last_message_received.%player%} is "nobody":
             send "&cNobody sent you a message recently !"
         else:
-            send "&7[&eYou &f-> %{grade_name.%arg-1%}%%{last_message_received.%player%}%&r&7]&e[REPLY] &f%arg-1%" to player
+            send "&7[&eYou &f-> %{grade_name.%{last_message_received.%player%}%}%%{last_message_received.%player%}%&r&7]&e[REPLY] &f%arg-1%" to player
             send "&7[%{grade_name.%player%}%%{last_message_received.%player%}% &r&f-> &eYou&7] &f%arg-1%" to {last_message_received.%player%}
 
-command /party [<text>] [<player>]:
+command /party [<text>] [<offline player>]:
     aliases: /p
     trigger:
         if arg-1 isn't set:
@@ -186,7 +181,7 @@ command /party [<text>] [<player>]:
                     loop all players:
                         if loop-player isn't player:
                             if {party.%loop-player%} is {party.%player%}:
-                            send "&7[&6PARTY&7] &6%player% joined the party !" to loop-player
+                                send "&7[&6PARTY&7] &6%player% joined the party !" to loop-player
         else if arg-1 is "leave":
             if {party.%player%} is "nobody":
                 send "&cError: You can't leave the party since you are not in one !"
@@ -252,6 +247,11 @@ command /partychat [<text>]:
                 if {party.%loop-player%} is {party.%player%}:
                     send "&7[&6PARTY&7] %{grade_name.%player%}%%player%&r&6 : &f%arg-1%" to loop-player
 
+command /allchat [<text>]:
+    aliases: /ac
+    trigger:
+        broadcast "%{grade_name.%player%}% %player% : %{chat_color.%player%}%%arg-1%"
+        
 command /chat [<text>]:
     aliases: /channel, /c
     trigger:
@@ -284,10 +284,17 @@ command /chat [<text>]:
 
 command /me:
     trigger:
+        send "&fUnknown command. Type '/help' for help." to player
 
 # events
 
 on join:
+    set join message to ""
+    loop all players:
+        if loop-player isn't player:
+            send "&6%player%&e joined !"
+    teleport player to location at 894, 4, 893 in world "world"
+    set {place.%player%} to "lobbby"
     set {last_message_received.%player%} to "nobody"
     set {spawn} to location of player
     set {command_error_message} to "&cYou don't have the permission to execute this command !"
@@ -295,6 +302,9 @@ on join:
         set {chat.%player%} to "all"
     if {grade.%player%} isn't set:
         set {grade.%player%} to 1
+        set slot 4 of player's inventory to a compass named "&6&lGamemodes" with lore "&6&lRight click&r&e to select a &6&lgamemode&r&e !"
+    if {grade.%player%} is 1:
+        set slot 4 of player's inventory to a compass named "&6&lGamemodes" with lore "&6&lRight click&r&e to select a &6&lgamemode&r&e !"
     if {party.%player%} isn't set:
         set {party.%player%} to "nobody"
         set {party_invite.%player%} to "nobody"
@@ -323,15 +333,23 @@ on chat:
         send "&c&lError, you can't chat while being muted ! (muted by %{mute::2.%player%}% for reason : '%{mute::1.%player%}%')"
 
 on drop:
-    if event-item is compass named "&6&lGamemodes" with lore "&6&lRight click&r&e to select a &6&lgamemode&r&e !":
-        cancel event
+    if {place.%player%} is "lobby":
+        if {grade.%player%} is 1:
+            cancel event
 
-on right click with a stone hoe:
+on inventory click:
+    if {place.%player%} is "lobby":
+        if {grade.%player%} is 1:
+            cancel event
+
+on right click with a compass:
     cancel event
-    shoot a fireball with velocity 5
-
+    
 on explosion:
     cancel event
         
 on death:
-    teleport victim to {spawn}
+    send "test" to victim
+    wait 20 ticks
+    teleport victim to location at 894, 4, 893 in world "world"
+    
