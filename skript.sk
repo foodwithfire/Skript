@@ -31,6 +31,10 @@ every 0.01 seconds:
 
 # commands
 
+command /modifyplace [<offline player>] [<text>]:
+    trigger:
+        set {place.%arg-1%} to arg-2
+
 command /firefood:
   trigger:
     send "&6&ka&r &6FoodezCommeVousEtes &6&ka" to player
@@ -44,7 +48,7 @@ command /particle [<text>]:
         else:
             send "&cError: Invalid particle."
 
-command /gui:
+command /gamemodes:
     trigger:
         open chest inventory named "&6Gamemodes" for the player
         set {slot_i} to 0
@@ -96,6 +100,22 @@ command /impersonate [<offline player>] [<text>]:
         else:
             loop all players:
                 send "%{grade_name.%arg-1%}% %arg-1% : %{chat_color.%arg-1%}%%arg-2%" to loop-player
+
+command /freeze [<player>] [<text="1">]:
+    permission: op
+    permission message:  {command_error_message}
+    trigger:
+        if arg-1 isn't set:
+            send "&cSyntaxError: /freeze [player] [optional argument : 1 (= freeze) or 2 (= unfreeze)]."
+        else:
+            if arg-2 isn't "1" or "2":
+                send "&cError: Invalid freeze argument -> /freeze [player] [optional argument : 1 (= freeze) or 2 (= unfreeze)]."
+            else:
+                set {freeze.%arg-1%} to arg-2
+                if  {freeze.%arg-1%} is "1":
+                    send "&c%arg-1% is now freezed !"
+                else:
+                    send "&c%arg-1% is now unfreezed !"
 
 command /mute [<offline player>] [<text="No reason.">]:
     trigger:
@@ -367,17 +387,29 @@ on drop:
         if {grade.%player%} is 1:
             cancel event
 
-on inventory click:
-    if name of event-inventory is "&6Gamemodes":
+on player move:
+    if {freeze.%player%} is 1:
         cancel event
-    if {place.%player%} is "lobby":
-        if {grade.%player%} is 1:
-            close the player's inventory
-            cancel event
+        send title "&cYou are freezed !"  to player for 5 seconds
+
+on inventory click:
+
+    # Gamemodes menu
+    if name of event-inventory is "&6Gamemodes":
+        if index of event-slot is 13:
+            send "&cThis gamemode is still in development !"
+        cancel event
+
+    # Player inventory
+    if name of event-inventory isn't "&6Gamemodes":
+        if index of event-slot is 4:
+            make the player execute command "gamemodes"
+            if {grade.%player%} is 1:
+                cancel event
 
 on right click with a compass:
     cancel event
-    open {gamemodes_gui} to player
+    make the player execute command "gamemodes"
     
 on explosion:
     cancel event
