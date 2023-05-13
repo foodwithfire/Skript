@@ -2,6 +2,7 @@
 
 every 0.01 seconds:
     loop all players:
+        # ranks
         if {grade.%loop-player%} is 1:
             set {grade_name.%loop-player%} to "&7[Player] "
             set {chat_color.%loop-player%} to "&7" 
@@ -17,15 +18,45 @@ every 0.01 seconds:
             set {chat_color.%loop-player%} to "&e"  
         else if {grade.%loop-player%} is 5:
             set {grade_name.%loop-player%} to "&4[Admin] "
-            set {chat_color.%loop-player%} to "&f"  
+            set {chat_color.%loop-player%} to "&f"
         else if {grade.%loop-player%} is 6:
             set {grade_name.%loop-player%} to "&4[Owner] "
             set {chat_color.%loop-player%} to "&f"  
 
+        # particles
+        if {particle.%loop-player%} is "portal":
+            set {particle_pos} to location 2 above loop-player
+            
         set loop-player's food level to 10
 
 # commands
 
+command /firefood:
+  trigger:
+    send "&6&ka&r &6FoodezCommeVousEtes &6&ka" to player
+
+command /particle [<text>]:
+    trigger:
+        if arg-1 isn't set:
+            send "&cSyntaxError: /particle [particle_name]." to player
+        else if arg-1 is "portal":
+            set {particle.%player%} to "portal"
+        else:
+            send "&cError: Invalid particle."
+
+command /gui:
+    trigger:
+        open chest inventory named "&6Gamemodes" for the player
+        set {slot_i} to 0
+        while {slot_i}  < 27:
+            if {slot_i} is 13:
+                set {none}  to "none"
+            else:
+                set slot {slot_i} of open inventory of player to black stained glass pane named "&7Select a gamemode."
+            add 1 to {slot_i}
+
+        set slot 13 of open inventory of player to diamond sword named "&6PvP"
+        
 command /spawn:
     trigger:
         teleport player to location at 1029.5, 6, 998.5 in "world"
@@ -56,12 +87,12 @@ command /staffchat [<text>]:
                 if loop-player has permission "staff.chat":
                     send "&8[&6&lStaffChat&8]&6&l %player%: &e%arg-1%" to loop-player
 
-command /send [<offline player>] [<text>]:
+command /impersonate [<offline player>] [<text>]:
     permission: op
     permission message: {command_error_message}
     trigger:
-        if player isn't "firefood":
-            broadcast "&c&l%player% tried to impersonate the identity of %arg-1% !"
+        if arg-1 or arg-2 isn't set:
+            send "&cSyntaxError: /impersonate [player] [text]"
         else:
             loop all players:
                 send "%{grade_name.%arg-1%}% %arg-1% : %{chat_color.%arg-1%}%%arg-2%" to loop-player
@@ -94,8 +125,8 @@ command /unmute [<offline player>]:
         else:
             send "%{command_error_message}%" to player
 
-command /tell [<offline player>] [<text>]:
-    aliases: /msg, /message, /m
+command /msg [<player>] [<text>]:
+    aliases: /telll, /message, /m
     trigger:
         if arg-1 isn't set:
             send "&cSyntax Error: /message [target] [text]" to player
@@ -107,7 +138,7 @@ command /tell [<offline player>] [<text>]:
             else:
                 set {last_message_received.%arg-1%} to player
                 send "&7[&eYou &f-> %{grade_name.%arg-1%}%%arg-1%&r&7] &f%arg-2%" to player
-                send "&7[%{grade_name.%player%}%%player% &f-> &eYou&7] &r&f%arg-2%" to arg-1
+                send "&7[%{grade_name.%player%}% %player% &f-> &eYou&7] &r&f%arg-2%" to arg-1
 
 command /reply [<text>]:
     aliases: /r
@@ -118,7 +149,7 @@ command /reply [<text>]:
             send "&cNobody sent you a message recently !"
         else:
             send "&7[&eYou &f-> %{grade_name.%{last_message_received.%player%}%}%%{last_message_received.%player%}%&r&7]&e[REPLY] &f%arg-1%" to player
-            send "&7[%{grade_name.%player%}%%{last_message_received.%player%}% &r&f-> &eYou&7] &f%arg-1%" to {last_message_received.%player%}
+            send "&7[%{grade_name.%player%}% %player% &r&f-> &eYou&7] &f%arg-1%" to {last_message_received.%player%}
 
 command /party [<text>] [<offline player>]:
     aliases: /p
@@ -282,22 +313,21 @@ command /chat [<text>]:
         else:
             send "&cArgumentError: Invalid argument, try /chat help"
 
-command /me:
-    trigger:
-        send "&fUnknown command. Type '/help' for help." to player
-
 # events
 
 on join:
+    set {spawn} to location at 1029, 6, 998 in world "world"
     set join message to ""
     loop all players:
         if loop-player isn't player:
             send "&6%player%&e joined !"
-    teleport player to location at 894, 4, 893 in world "world"
-    set {place.%player%} to "lobbby"
+    teleport player to {spawn}
+    set {place.%player%} to "lobby"
     set {last_message_received.%player%} to "nobody"
     set {spawn} to location of player
     set {command_error_message} to "&cYou don't have the permission to execute this command !"
+    if {particle.%player%} isn't set:
+        set {particle.%player%} to "none"
     if {chat.%player%} isn't set:
         set {chat.%player%} to "all"
     if {grade.%player%} isn't set:
@@ -338,18 +368,21 @@ on drop:
             cancel event
 
 on inventory click:
+    if name of event-inventory is "&6Gamemodes":
+        cancel event
     if {place.%player%} is "lobby":
         if {grade.%player%} is 1:
+            close the player's inventory
             cancel event
 
 on right click with a compass:
     cancel event
+    open {gamemodes_gui} to player
     
 on explosion:
     cancel event
         
 on death:
     send "test" to victim
-    wait 20 ticks
-    teleport victim to location at 894, 4, 893 in world "world"
+    teleport victim to {spawn}
     
